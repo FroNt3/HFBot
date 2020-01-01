@@ -67,6 +67,8 @@ public class HFBot extends TelegramLongPollingBot {
             
                 Matcher ffMatcher = ffPattern.matcher(receivedMsg);
                 
+                long startTime = System.nanoTime();
+                
                 if (receivedMsg.toLowerCase().startsWith("!hfb")) {
                     
                     ArrayList<String> stringList = new ArrayList<String>();
@@ -74,7 +76,7 @@ public class HFBot extends TelegramLongPollingBot {
                     json = readJSON("servers", "!HFB");
                 
                     JSONArray jsonArrayData = json.getJSONArray("data");                
-                    JSONArray jsonArrayPlayers = (JSONArray) jsonArrayData.getJSONObject(0).get("Players");   
+                    JSONArray jsonArrayPlayers = jsonArrayData.getJSONObject(0).getJSONArray("Players");
                 
                     for (Object player : jsonArrayPlayers) {
                         if (player.toString().startsWith("[HFB]")) {
@@ -83,16 +85,11 @@ public class HFBot extends TelegramLongPollingBot {
                     }
                 
                     messageText = 
-                            "Es sind " + Integer.toString(stringList.size()) + " HFB Mitglieder auf dem Server.\n";
+                            "Es sind " + Integer.toString(stringList.size()) + " HFB Mitglieder auf dem Server.\n";                    
                     
-                    if (receivedMsg.length() > "!hfb".length()) {
-                        String args = receivedMsg.split("\\s+")[1]; 
-                        if (args.toLowerCase().startsWith("list")) {
-                            for (String player : stringList) {
-                                messageText = messageText + player + "\n";
-                            }
-                        }
-                    }  
+                    for (String player : stringList) {
+                        messageText = messageText + player + "\n";
+                    } 
                     
                     sendBotMessage(messageText, chatId, "!hfb");
                     
@@ -149,7 +146,7 @@ public class HFBot extends TelegramLongPollingBot {
                     json = readJSON("servers", "!server");
                 
                     JSONArray jsonArrayData = json.getJSONArray("data");                
-                    JSONArray jsonArrayPlayers = (JSONArray) jsonArrayData.getJSONObject(0).get("Players");    
+                    JSONArray jsonArrayPlayers = jsonArrayData.getJSONObject(0).getJSONArray("Players");    
                     
                     if (receivedMsg.length() > "!server".length()) {
                         String args = receivedMsg.split("\\s+")[1];
@@ -173,7 +170,7 @@ public class HFBot extends TelegramLongPollingBot {
                     json = readJSON("teamspeaks", "!ts");
                 
                     JSONArray jsonArrayData = json.getJSONArray("data");                
-                    JSONArray jsonArrayUsers = (JSONArray) jsonArrayData.getJSONObject(0).get("Users");    
+                    JSONArray jsonArrayUsers = jsonArrayData.getJSONObject(0).getJSONArray("Users");    
                     
                     if (receivedMsg.length() > "!ts".length()) {
                         String args = receivedMsg.split("\\s+")[1];
@@ -206,7 +203,7 @@ public class HFBot extends TelegramLongPollingBot {
                     }
                 
                     JSONArray jsonArrayData = json.getJSONArray("data");                
-                    JSONArray jsonArrayPlayers = (JSONArray) jsonArrayData.getJSONObject(0).get("Players");    
+                    JSONArray jsonArrayPlayers = jsonArrayData.getJSONObject(0).getJSONArray("Players");    
                 
                     int counter = 0;
                 
@@ -224,7 +221,7 @@ public class HFBot extends TelegramLongPollingBot {
                         message.setText(messageText);
                         message.setChatId(chatId);   
                         messageId = sendMessage(message).getMessageId();
-                        **/
+                        **/                      
                         
                         pinMessage.setChatId(chatId);
                         pinMessage.setMessageId(receivedMsgId);
@@ -273,35 +270,81 @@ public class HFBot extends TelegramLongPollingBot {
                     
                     sendBotMessage(messageText, chatIdHFB, "!botmessage");
                     
+                } else if (receivedMsg.toLowerCase().startsWith("!cops")) {
+                    
+                    ArrayList<String> stringList = new ArrayList<String>();
+                    
+                    json = readJSON("servers", "!cops");
+                
+                    JSONArray jsonArrayData = json.getJSONArray("data");                
+                    JSONObject jsonObjectSide = jsonArrayData.getJSONObject(0).getJSONObject("Side");
+                    JSONArray jsonArrayCops = jsonObjectSide.getJSONArray("Cops");
+                
+                    for (Object player : jsonArrayCops) {
+                        if (!player.toString().startsWith("[Justiz]")) {
+                            stringList.add(player.toString());
+                        }
+                    }
+                
+                    messageText = 
+                            "Es sind " + Integer.toString(stringList.size()) + " Cops auf dem Server.\n";
+                    
+                    if (receivedMsg.length() > "!cops".length()) {
+                        String args = receivedMsg.split("\\s+")[1]; 
+                        if (args.toLowerCase().startsWith("list")) {
+                            for (String player : stringList) {
+                                messageText = messageText + player + "\n";
+                            }
+                        }
+                    }  
+                    
+                    sendBotMessage(messageText, chatId, "!cops");
+                    
                 } else if (receivedMsg.equalsIgnoreCase("!help")) {
                     messageText = 
-                            "!HFB = Zeigt an wie viele HFB Mitglieder auf dem Server sind.\n"
-                            + "!HFB list = Listet zusätzlich alle anwesenden HFB Mitglieder auf.\n"
+                            "!HFB = Zeigt an wie viele HFB Mitglieder auf dem Server sind und deren Namen.\n"
+                            + "!cops (list) = Zeigt an wie viele Cops auf dem Server sind und wahlweise deren Namen.\n"
                             + "!ff = Legt eine neue Frequenz fest und pinnt sie.\n"                            
                             + "!server <Name> = Zeigt an ob <Name> auf dem Server ist.\n"
                             + "!ts <Name> = Zeigt an ob <Name> auf dem Teamspeak ist.\n"
                             + "!Geld <Name> = Zeigt an wie viel Geld <Name> (John/Paul/Makarov/Vladi/Hans) auf der Bank hat.\n"
+                            + "!changelog (full) = Zeigt die letzte oder alle Änderung an.\n"
                             + "------------------------------------------------------------------\n"
                             + "Außerdem werden geschriebene Frequenzen automatisch gepinnt.\n"
                             + "Falls jemand Ideen für nützliche Funktionen hat bitte bei John Simmit aka Dipsy melden.";
                                    
                     sendBotMessage(messageText, chatId, "!help");
                     
-                } else if (receivedMsg.equalsIgnoreCase("!changelog")) {
+                } else if (receivedMsg.toLowerCase().startsWith("!changelog")) {
                     messageText = 
-                            ">>> 29.12.19 - 16:33 <<<\n"
-                            + "- !HFB akzeptiert jetzt \"list\" als Argument um alle anwesenden Mitglieder aufzulisten.\n"
-                            + "- API key von Hans Flucht hinzugefügt.\n"
-                            + "- Commands mit Variablen machen den Bot nicht mehr verrückt, wenn man die Variablen vergisst.\n"
-                            + "- Groß und Kleinschreibung sollte jetzt überall egal sein.\n"
-                            + ">>> 29.12.19 - 02:06 <<<\n"                            
-                            + "- !Geld command geupdated (siehe !help).\n"
-                            + "- !server und !ts commands achten nicht mehr auf Groß/Kleinschreibung.\n"
-                            + "- Dem Bot wurde ein Mund angenäht :)";
+                            ">>> 30.12.19 - 19:05 <<<\n"
+                            + "-!cops (list) hinzugefügt.\n"
+                            + "-!changelog (full) hinzugefügt.\n"
+                            + "-!hfb zeigt jetzt immer alle Mitspieler an (@Remagy).\n"
+                            + "-Code effizienter gemacht.\n";
+                    
+                    if (receivedMsg.length() > "!changelog".length()) {
+                        String args = receivedMsg.split("\\s+")[1]; 
+                        if (args.toLowerCase().startsWith("full")) {
+                            messageText = messageText
+                                    + ">>> 29.12.19 - 16:33 <<<\n"
+                                    + "- !HFB akzeptiert jetzt \"list\" als Argument um alle anwesenden Mitglieder aufzulisten.\n"
+                                    + "- API key von Hans Flucht hinzugefügt.\n"
+                                    + "- Commands mit Variablen machen den Bot nicht mehr verrückt, wenn man die Variablen vergisst.\n"
+                                    + "- Groß und Kleinschreibung sollte jetzt überall egal sein.\n"
+                                    + ">>> 29.12.19 - 02:06 <<<\n"                            
+                                    + "- !Geld command geupdated (siehe !help).\n"
+                                    + "- !server und !ts commands achten nicht mehr auf Groß/Kleinschreibung.\n"
+                                    + "- Dem Bot wurde ein Mund angenäht :)";                            
+                        }
+                    }                
                     
                     sendBotMessage(messageText, chatId, "!changelog");
                     
                 }
+                
+                long endTime = System.nanoTime();
+                System.out.println(endTime - startTime);
                 
             }          
             
