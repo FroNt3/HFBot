@@ -50,7 +50,39 @@ public enum Command {
         }                
     },
     
-    GELD("![gG][eE][lL][dD]\\s?([a-zA-Z‰ˆ¸ƒ÷‹ﬂ]*)(\\s?)([a-zA-Z‰ˆ¸ƒ÷‹ﬂ]*)") {
+    GANG("![gG][aA][nN][gG]\\s?([a-zA-Z0-9√§√∂√º√Ñ√ñ√ú√ü]*)") {    
+        @Override
+        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
+                throws InputException, JSONException, IOException, TelegramApiException {
+            
+            ArrayList<String> stringList = new ArrayList<String>();
+            
+            String tag = matcher.group(1);
+            
+            JSONObject json = JsonReader.readJsonFromUrl("https://api.realliferpg.de/v1/servers");
+            
+            JSONArray jsonArrayData = json.getJSONArray("data");                
+            JSONArray jsonArrayPlayers = jsonArrayData.getJSONObject(0).getJSONArray("Players");
+        
+            for (Object player : jsonArrayPlayers) {
+                if (player.toString().toLowerCase().startsWith("[" + tag.toLowerCase() + "]")) {
+                    stringList.add(player.toString());
+                }
+            }
+            
+            String messageText = 
+                    "Es sind " + Integer.toString(stringList.size()) + " " + tag + " Mitglieder auf dem Server.\n";                    
+            
+            for (String player : stringList) {
+                messageText = messageText + player + "\n";
+            } 
+            
+            hfbot.sendBotMessage(messageText, chatId);
+            
+        }
+    },
+    
+    GELD("![gG][eE][lL][dD]\\s?([a-zA-Z0-9√§√∂√º√Ñ√ñ√ú√ü]*)(\\s?)([a-zA-Z0-9√§√∂√º√Ñ√ñ√ú√ü]*)") {
         @Override
         public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
                 throws InputException, JSONException, IOException, TelegramApiException {            
@@ -91,8 +123,25 @@ public enum Command {
                 JSONObject json = JsonReader.readJsonFromUrl(url);
                 JSONArray jsonArrayData = json.getJSONArray("data");
                 int balance = jsonArrayData.getJSONObject(0).getInt("bankacc");
+                
+                String balanceUnformat = Integer.toString(balance);
+                String balanceReverse = "";
+                String balanceFormat = "";
+                int counter = 0;
+                
+                for (int i = (balanceUnformat.length()-1); i>=0; i--) {
+                    balanceReverse = balanceReverse + balanceUnformat.charAt(i);
+                    if (++counter == 3 && i != 0) {
+                        balanceReverse = balanceReverse + ".";
+                        counter = 0;
+                    }
+                }
+                
+                for (int i = (balanceReverse.length()-1); i>=0; i--) {
+                    balanceFormat = balanceFormat + balanceReverse.charAt(i);
+                }
 
-                messageText = messageText + " hat " + Integer.toString(balance) + "$ auf seinem Konto.";
+                messageText = messageText + " hat " + balanceFormat + "$ auf seinem Konto.";
             } else {
                 messageText = "Von " + name
                         + " ist kein API key vorhanden oder kann niemandem zugeordnet werden.";
@@ -102,7 +151,7 @@ public enum Command {
         }        
     },
     
-    SERVER("![sS][eE][rR][vV][eE][rR]\\s?([a-zA-Z‰ˆ¸ƒ÷‹ﬂ]*)(\\s?)([a-zA-Z‰ˆ¸ƒ÷‹ﬂ]*)") {
+    SERVER("![sS][eE][rR][vV][eE][rR]\\s?([a-zA-Z0-9√§√∂√º√Ñ√ñ√ú√ü]*)(\\s?)([a-zA-Z0-9√§√∂√º√Ñ√ñ√ú√ü]*)") {
         @Override
         public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
                 throws InputException, JSONException, IOException, TelegramApiException {           
@@ -128,7 +177,7 @@ public enum Command {
         }        
     },
     
-    TS("![tT][sS]\\s?([a-zA-Z‰ˆ¸ƒ÷‹ﬂ]*)(\\s?)([a-zA-Z‰ˆ¸ƒ÷‹ﬂ]*)") {
+    TS("![tT][sS]\\s?([a-zA-Z0-9√§√∂√º√Ñ√ñ√ú√ü]*)(\\s?)([a-zA-Z0-9√§√∂√º√Ñ√ñ√ú√ü]*)") {
         @Override
         public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
                 throws InputException, JSONException, IOException, TelegramApiException {
@@ -230,11 +279,12 @@ public enum Command {
                     + "!ff = Legt eine neue Frequenz fest und pinnt sie.\n"                            
                     + "!server <Name> = Zeigt an ob <Name> auf dem Server ist.\n"
                     + "!ts <Name> = Zeigt an ob <Name> auf dem Teamspeak ist.\n"
+                    + "!gang <Tag> = Zeigt an wie viele Gangmitglieder von <Tag> auf dem Server sind.\n"
                     + "!Geld <Name> = Zeigt an wie viel Geld <Name> (John/Paul/Makarov/Vladi/Hans) auf der Bank hat.\n"
-                    + "!changelog (full) = Zeigt die letzte oder alle ƒnderung an.\n"
+                    + "!changelog (full) = Zeigt die letzte oder alle ÔøΩnderung an.\n"
                     + "------------------------------------------------------------------\n"
-                    + "Auﬂerdem werden geschriebene Frequenzen automatisch gepinnt.\n"
-                    + "Falls jemand Ideen f¸r n¸tzliche Funktionen hat bitte bei John Simmit aka Dipsy melden.";
+                    + "AuÔøΩerdem werden geschriebene Frequenzen automatisch gepinnt.\n"
+                    + "Falls jemand Ideen fÔøΩr nÔøΩtzliche Funktionen hat bitte bei John Simmit aka Dipsy melden.";
                            
             hfbot.sendBotMessage(messageText, chatId);
         }        
@@ -246,26 +296,30 @@ public enum Command {
                 throws InputException, JSONException, IOException, TelegramApiException {
             
             String messageText = 
-                    ">>> 01.01.20 - 18:12 <<<\n"
-                    + "-Code Architektur komplett ¸berarbeitet.\n"
-                    + "-github repo: https://github.com/FroNt3/HFBot/tree/master/src/main/java/org/patrick\n";
+                    ">>> 04.01.20 - 00:19 <<<\n"
+                    + "- !gang <Tag> hinzugef√ºgt.\n";
+                    
             
             if (matcher.group(0).length() > "!changelog".length()) {
                 messageText = messageText
+                            + ">>> 01.01.20 - 18:12 <<<\n"
+                            + "-Code Architektur komplett ÔøΩberarbeitet.\n"
+                            + "-!geld hat jetzt formatierte Zahlen.\n"
+                            + "-github repo: https://github.com/FroNt3/HFBot/tree/master/src/main/java/org/patrick\n"
                             + ">>> 30.12.19 - 19:05 <<<\n"
-                            + "-!cops (list) hinzugef¸gt.\n"
-                            + "-!changelog (full) hinzugef¸gt.\n"
+                            + "-!cops (list) hinzugefÔøΩgt.\n"
+                            + "-!changelog (full) hinzugefÔøΩgt.\n"
                             + "-!hfb zeigt jetzt immer alle Mitspieler an (@Remagy).\n"
                             + "-Code effizienter gemacht.\n"
                             + ">>> 29.12.19 - 16:33 <<<\n"
                             + "- !HFB akzeptiert jetzt \"list\" als Argument um alle anwesenden Mitglieder aufzulisten.\n"
-                            + "- API key von Hans Flucht hinzugef¸gt.\n"
-                            + "- Commands mit Variablen machen den Bot nicht mehr verr¸ckt, wenn man die Variablen vergisst.\n"
-                            + "- Groﬂ und Kleinschreibung sollte jetzt ¸berall egal sein.\n"
+                            + "- API key von Hans Flucht hinzugefÔøΩgt.\n"
+                            + "- Commands mit Variablen machen den Bot nicht mehr verrÔøΩckt, wenn man die Variablen vergisst.\n"
+                            + "- GroÔøΩ und Kleinschreibung sollte jetzt ÔøΩberall egal sein.\n"
                             + ">>> 29.12.19 - 02:06 <<<\n"                            
                             + "- !Geld command geupdated (siehe !help).\n"
-                            + "- !server und !ts commands achten nicht mehr auf Groﬂ/Kleinschreibung.\n"
-                            + "- Dem Bot wurde ein Mund angen‰ht :)";    
+                            + "- !server und !ts commands achten nicht mehr auf GroÔøΩ/Kleinschreibung.\n"
+                            + "- Dem Bot wurde ein Mund angenÔøΩht :)";    
             }               
             
             hfbot.sendBotMessage(messageText, chatId);             

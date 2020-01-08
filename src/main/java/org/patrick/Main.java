@@ -19,11 +19,13 @@ public class Main {
 
         ApiContextInitializer.init();
         TelegramBotsApi telegramBotsApi = new TelegramBotsApi();
+        System.out.println("Starting HFBot...");
         try {
             telegramBotsApi.registerBot(new HFBot());
-
+            System.out.println("HFBot online");
         } catch (TelegramApiException e) {
             e.printStackTrace();
+            System.out.println("HFBot failed to start");
         }
 
 
