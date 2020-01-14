@@ -32,7 +32,22 @@ public enum Command {
         
             JSONArray jsonArrayData = json.getJSONArray("data");                
             JSONArray jsonArrayPlayers = jsonArrayData.getJSONObject(0).getJSONArray("Players");
-        
+            
+            /**
+            String updatedTime = jsonArrayData.getJSONObject(0).getJSONObject("updated_at").getString("date");    
+            
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");  
+            LocalDateTime now = LocalDateTime.now();  
+            String currentTime = dtf.format(now);            
+            
+            updatedTime = updatedTime.replaceFirst("\\.[0]*", "");
+            updatedTime = updatedTime.replaceFirst("[0-9]*-[0-9]*-[0-9]* ", "");
+            
+            LocalTime t1 = LocalTime.parse(updatedTime);
+            LocalTime t2 = LocalTime.parse(currentTime);
+            Duration diff = Duration.between(t1, t2);
+            **/
+            
             for (Object player : jsonArrayPlayers) {
                 if (player.toString().startsWith("[HFB]")) {
                     stringList.add(player.toString());
@@ -40,7 +55,7 @@ public enum Command {
             }
         
             String messageText = 
-                    "Es sind " + Integer.toString(stringList.size()) + " HFB Mitglieder auf dem Server.\n";                    
+                    /**"Stand von vor " + diff.toSeconds() + " Sekunden" + "\n**/"Es sind " + Integer.toString(stringList.size()) + " HFB Mitglieder auf dem Server.\n";                    
             
             for (String player : stringList) {
                 messageText = messageText + player + "\n";
@@ -95,27 +110,33 @@ public enum Command {
             String url = "https://api.realliferpg.de/v1/player/";
             String messageText = "";
             
+            String[] keyJohn = Keys.getKeyJohn();
+            String[] keyPaul = Keys.getKeyPaul();
+            String[] keyMakarov = Keys.getKeyMakarov();
+            String[] keyVladimir = Keys.getKeyVladimir();
+            String[] keyHans = Keys.getKeyHans();   
+            
             Boolean check = false;
             
-            if (Keys.getKeyJohn()[0].toLowerCase().contains(name.toLowerCase())) {
-                url = url + Keys.getKeyJohn()[1];
-                messageText = Keys.getKeyJohn()[0];
+            if (containsToLowerCase(keyJohn[0], name)) {
+                url = url + keyJohn[1];
+                messageText = keyJohn[0];
                 check = true;
-            } else if (Keys.getKeyPaul()[0].toLowerCase().contains(name.toLowerCase())) {
-                url = url + Keys.getKeyPaul()[1];
-                messageText = Keys.getKeyPaul()[0];
+            } else if (containsToLowerCase(keyPaul[0], name)) {
+                url = url + keyPaul[1];
+                messageText = keyPaul[0];
                 check = true;
-            } else if (Keys.getKeyMakarov()[0].toLowerCase().contains(name.toLowerCase())) {
-                url = url + Keys.getKeyMakarov()[1];
-                messageText = Keys.getKeyMakarov()[0];
+            } else if (containsToLowerCase(keyMakarov[0], name)) {
+                url = url + keyMakarov[1];
+                messageText = keyMakarov[0];
                 check = true;
-            } else if (Keys.getKeyVladimir()[0].toLowerCase().contains(name.toLowerCase())) {
-                url = url + Keys.getKeyVladimir()[1];
-                messageText = Keys.getKeyVladimir()[0];
+            } else if (containsToLowerCase(keyVladimir[0], name)) {
+                url = url + keyVladimir[1];
+                messageText = keyVladimir[0];
                 check = true;
-            } else if (Keys.getKeyHans()[0].toLowerCase().contains(name.toLowerCase())) {
-                url = url + Keys.getKeyHans()[1];
-                messageText = Keys.getKeyHans()[0];
+            } else if (containsToLowerCase(keyHans[0], name)) {
+                url = url + keyHans[1];
+                messageText = keyHans[0];
                 check = true;
             }
             
@@ -167,7 +188,7 @@ public enum Command {
             
             String messageText = name + " ist nicht auf dem Server.";
             for (Object player : jsonArrayPlayers) {
-                if (player.toString().toLowerCase().contains(name.toLowerCase())) {
+                if (containsToLowerCase(player.toString(), name)) {
                     messageText = player.toString() + " ist auf dem Server.";
                     break;
                 }
@@ -193,7 +214,7 @@ public enum Command {
             
             String messageText = name + " ist nicht auf dem TS.";
             for (Object users : jsonArrayUsers) {
-                if (users.toString().toLowerCase().contains(name.toLowerCase())) {
+                if (containsToLowerCase(users.toString(), name)) {
                     messageText = users.toString() + " ist auf dem TS.";
                     break;
                 }
@@ -239,6 +260,21 @@ public enum Command {
             JSONArray jsonArrayData = json.getJSONArray("data");                
             JSONObject jsonObjectSide = jsonArrayData.getJSONObject(0).getJSONObject("Side");
             JSONArray jsonArrayCops = jsonObjectSide.getJSONArray("Cops");
+            
+            /**
+            String updatedTime = jsonArrayData.getJSONObject(0).getJSONObject("updated_at").getString("date");    
+            
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");  
+            LocalDateTime now = LocalDateTime.now();  
+            String currentTime = dtf.format(now);            
+            
+            updatedTime = updatedTime.replaceFirst("\\.[0]*", "");
+            updatedTime = updatedTime.replaceFirst("[0-9]*-[0-9]*-[0-9]* ", "");
+            
+            LocalTime t1 = LocalTime.parse(updatedTime);
+            LocalTime t2 = LocalTime.parse(currentTime);
+            Duration diff = Duration.between(t1, t2);
+            **/
         
             for (Object player : jsonArrayCops) {
                 if (!player.toString().startsWith("[Justiz]")) {
@@ -247,7 +283,7 @@ public enum Command {
             }
         
             String messageText = 
-                    "Es sind " + Integer.toString(stringList.size()) + " Cops auf dem Server.\n";
+                    /**"Stand von vor " + diff.toSeconds() + " Sekunden" + "\n**/"Es sind " + Integer.toString(stringList.size()) + " Cops auf dem Server.\n";
             
             if (matcher.group(0).length() > "!cops".length()) {
                 for (String player : stringList) {
@@ -281,10 +317,10 @@ public enum Command {
                     + "!ts <Name> = Zeigt an ob <Name> auf dem Teamspeak ist.\n"
                     + "!gang <Tag> = Zeigt an wie viele Gangmitglieder von <Tag> auf dem Server sind.\n"
                     + "!Geld <Name> = Zeigt an wie viel Geld <Name> (John/Paul/Makarov/Vladi/Hans) auf der Bank hat.\n"
-                    + "!changelog (full) = Zeigt die letzte oder alle �nderung an.\n"
+                    + "!changelog (full) = Zeigt die letzte oder alle Änderung an.\n"
                     + "------------------------------------------------------------------\n"
-                    + "Au�erdem werden geschriebene Frequenzen automatisch gepinnt.\n"
-                    + "Falls jemand Ideen f�r n�tzliche Funktionen hat bitte bei John Simmit aka Dipsy melden.";
+                    + "Außerdem werden geschriebene Frequenzen automatisch gepinnt.\n"
+                    + "Falls jemand Ideen für nützliche Funktionen hat bitte bei John Simmit aka Dipsy melden.";
                            
             hfbot.sendBotMessage(messageText, chatId);
         }        
@@ -303,23 +339,23 @@ public enum Command {
             if (matcher.group(0).length() > "!changelog".length()) {
                 messageText = messageText
                             + ">>> 01.01.20 - 18:12 <<<\n"
-                            + "-Code Architektur komplett �berarbeitet.\n"
+                            + "-Code Architektur komplett Überarbeitet.\n"
                             + "-!geld hat jetzt formatierte Zahlen.\n"
                             + "-github repo: https://github.com/FroNt3/HFBot/tree/master/src/main/java/org/patrick\n"
                             + ">>> 30.12.19 - 19:05 <<<\n"
-                            + "-!cops (list) hinzugef�gt.\n"
-                            + "-!changelog (full) hinzugef�gt.\n"
+                            + "-!cops (list) hinzugefÜgt.\n"
+                            + "-!changelog (full) hinzugefÜgt.\n"
                             + "-!hfb zeigt jetzt immer alle Mitspieler an (@Remagy).\n"
                             + "-Code effizienter gemacht.\n"
                             + ">>> 29.12.19 - 16:33 <<<\n"
                             + "- !HFB akzeptiert jetzt \"list\" als Argument um alle anwesenden Mitglieder aufzulisten.\n"
-                            + "- API key von Hans Flucht hinzugef�gt.\n"
-                            + "- Commands mit Variablen machen den Bot nicht mehr verr�ckt, wenn man die Variablen vergisst.\n"
-                            + "- Gro� und Kleinschreibung sollte jetzt �berall egal sein.\n"
+                            + "- API key von Hans Flucht hinzugefÜgt.\n"
+                            + "- Commands mit Variablen machen den Bot nicht mehr verrückt, wenn man die Variablen vergisst.\n"
+                            + "- Groß und Kleinschreibung sollte jetzt überall egal sein.\n"
                             + ">>> 29.12.19 - 02:06 <<<\n"                            
                             + "- !Geld command geupdated (siehe !help).\n"
-                            + "- !server und !ts commands achten nicht mehr auf Gro�/Kleinschreibung.\n"
-                            + "- Dem Bot wurde ein Mund angen�ht :)";    
+                            + "- !server und !ts commands achten nicht mehr auf Groß/Kleinschreibung.\n"
+                            + "- Dem Bot wurde ein Mund angenäht :)";    
             }               
             
             hfbot.sendBotMessage(messageText, chatId);             
@@ -366,4 +402,11 @@ public enum Command {
      */
     public abstract void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot) 
             throws InputException, JSONException, IOException, TelegramApiException;
+    
+    /**
+     * @return Whether string2 is within string1 or not
+     */
+    private static boolean containsToLowerCase(String string1, String string2) {
+        return string1.toLowerCase().contains(string2.toLowerCase());
+    }
 }
