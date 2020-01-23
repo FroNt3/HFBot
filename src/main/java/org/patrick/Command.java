@@ -19,7 +19,7 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
  * Commands of the HFBot
  *
  */
-public enum Command {    
+public enum Command {      
     
     HFB("![hH][fF][bB]") {
         @Override
@@ -33,21 +33,6 @@ public enum Command {
             JSONArray jsonArrayData = json.getJSONArray("data");                
             JSONArray jsonArrayPlayers = jsonArrayData.getJSONObject(0).getJSONArray("Players");
             
-            /**
-            String updatedTime = jsonArrayData.getJSONObject(0).getJSONObject("updated_at").getString("date");    
-            
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");  
-            LocalDateTime now = LocalDateTime.now();  
-            String currentTime = dtf.format(now);            
-            
-            updatedTime = updatedTime.replaceFirst("\\.[0]*", "");
-            updatedTime = updatedTime.replaceFirst("[0-9]*-[0-9]*-[0-9]* ", "");
-            
-            LocalTime t1 = LocalTime.parse(updatedTime);
-            LocalTime t2 = LocalTime.parse(currentTime);
-            Duration diff = Duration.between(t1, t2);
-            **/
-            
             for (Object player : jsonArrayPlayers) {
                 if (player.toString().startsWith("[HFB]")) {
                     stringList.add(player.toString());
@@ -55,7 +40,7 @@ public enum Command {
             }
         
             String messageText = 
-                    /**"Stand von vor " + diff.toSeconds() + " Sekunden" + "\n**/"Es sind " + Integer.toString(stringList.size()) + " HFB Mitglieder auf dem Server.\n";                    
+                    "Es sind " + Integer.toString(stringList.size()) + " HFB Mitglieder auf dem Server.\n";
             
             for (String player : stringList) {
                 messageText = messageText + player + "\n";
@@ -65,7 +50,7 @@ public enum Command {
         }                
     },
     
-    GANG("![gG][aA][nN][gG]\\s?([a-zA-Z0-9äöüÄÖÜß]*)") {    
+    GANG("![gG][aA][nN][gG]\\s?(.*)") {    
         @Override
         public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
                 throws InputException, JSONException, IOException, TelegramApiException {
@@ -86,7 +71,7 @@ public enum Command {
             }
             
             String messageText = 
-                    "Es sind " + Integer.toString(stringList.size()) + " " + tag + " Mitglieder auf dem Server.\n";                    
+                    "Es sind " + Integer.toString(stringList.size()) + " " + tag + " Mitglieder auf dem Server.\n";
             
             for (String player : stringList) {
                 messageText = messageText + player + "\n";
@@ -97,47 +82,32 @@ public enum Command {
         }
     },
     
-    GELD("![gG][eE][lL][dD]\\s?([a-zA-Z0-9äöüÄÖÜß]*)(\\s?)([a-zA-Z0-9äöüÄÖÜß]*)") {
+    GELD("![gG][eE][lL][dD]\\s?(.*)") {
         @Override
         public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
-                throws InputException, JSONException, IOException, TelegramApiException {            
+                throws InputException, JSONException, IOException, TelegramApiException { 
             
-            String firstName = matcher.group(1);
-            String space = matcher.group(2);
-            String secondName = matcher.group(3);            
-            String name = firstName + space + secondName;
+            String name = matcher.group(1);
             
             String url = "https://api.realliferpg.de/v1/player/";
             String messageText = "";
             
-            String[] keyJohn = Keys.getKeyJohn();
-            String[] keyPaul = Keys.getKeyPaul();
-            String[] keyMakarov = Keys.getKeyMakarov();
-            String[] keyVladimir = Keys.getKeyVladimir();
-            String[] keyHans = Keys.getKeyHans();   
+            ArrayList<String[]> infoList = PrivateInfo.getAllInfo();
+            ArrayList<Person> personList = new ArrayList<Person>();
+            
+            for (String[] info : infoList) {
+                personList.add(new Person(info));
+            }
             
             Boolean check = false;
             
-            if (containsToLowerCase(keyJohn[0], name)) {
-                url = url + keyJohn[1];
-                messageText = keyJohn[0];
-                check = true;
-            } else if (containsToLowerCase(keyPaul[0], name)) {
-                url = url + keyPaul[1];
-                messageText = keyPaul[0];
-                check = true;
-            } else if (containsToLowerCase(keyMakarov[0], name)) {
-                url = url + keyMakarov[1];
-                messageText = keyMakarov[0];
-                check = true;
-            } else if (containsToLowerCase(keyVladimir[0], name)) {
-                url = url + keyVladimir[1];
-                messageText = keyVladimir[0];
-                check = true;
-            } else if (containsToLowerCase(keyHans[0], name)) {
-                url = url + keyHans[1];
-                messageText = keyHans[0];
-                check = true;
+            for (Person person : personList) {
+                if (containsToLowerCase(person.getName(), name)) {
+                    url = url + person.getKey();
+                    messageText = person.getName();
+                    check = true;
+                    break;
+                }
             }
             
             if (check) {
@@ -150,7 +120,7 @@ public enum Command {
                 String balanceFormat = "";
                 int counter = 0;
                 
-                for (int i = (balanceUnformat.length()-1); i>=0; i--) {
+                for (int i = (balanceUnformat.length() - 1); i >= 0; i--) {
                     balanceReverse = balanceReverse + balanceUnformat.charAt(i);
                     if (++counter == 3 && i != 0) {
                         balanceReverse = balanceReverse + ".";
@@ -158,7 +128,7 @@ public enum Command {
                     }
                 }
                 
-                for (int i = (balanceReverse.length()-1); i>=0; i--) {
+                for (int i = (balanceReverse.length() - 1); i >= 0; i--) {
                     balanceFormat = balanceFormat + balanceReverse.charAt(i);
                 }
 
@@ -172,15 +142,12 @@ public enum Command {
         }        
     },
     
-    SERVER("![sS][eE][rR][vV][eE][rR]\\s?([a-zA-Z0-9äöüÄÖÜß]*)(\\s?)([a-zA-Z0-9äöüÄÖÜß]*)") {
+    SERVER("![sS][eE][rR][vV][eE][rR]\\s?(.*)") {
         @Override
         public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
-                throws InputException, JSONException, IOException, TelegramApiException {           
+                throws InputException, JSONException, IOException, TelegramApiException {   
             
-            String firstName = matcher.group(1);
-            String space = matcher.group(2);
-            String secondName = matcher.group(3);            
-            String name = firstName + space + secondName;
+            String name = matcher.group(1);
             
             JSONObject json = JsonReader.readJsonFromUrl("https://api.realliferpg.de/v1/servers");            
             JSONArray jsonArrayData = json.getJSONArray("data");                
@@ -198,15 +165,12 @@ public enum Command {
         }        
     },
     
-    TS("![tT][sS]\\s?([a-zA-Z0-9äöüÄÖÜß]*)(\\s?)([a-zA-Z0-9äöüÄÖÜß]*)") {
+    TS("![tT][sS]\\s?(.*)") {
         @Override
         public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
                 throws InputException, JSONException, IOException, TelegramApiException {
                         
-            String firstName = matcher.group(1);
-            String space = matcher.group(2);
-            String secondName = matcher.group(3);            
-            String name = firstName + space + secondName;
+            String name = matcher.group(1);
             
             JSONObject json = JsonReader.readJsonFromUrl("https://api.realliferpg.de/v1/teamspeaks");          
             JSONArray jsonArrayData = json.getJSONArray("data");                
@@ -260,21 +224,6 @@ public enum Command {
             JSONArray jsonArrayData = json.getJSONArray("data");                
             JSONObject jsonObjectSide = jsonArrayData.getJSONObject(0).getJSONObject("Side");
             JSONArray jsonArrayCops = jsonObjectSide.getJSONArray("Cops");
-            
-            /**
-            String updatedTime = jsonArrayData.getJSONObject(0).getJSONObject("updated_at").getString("date");    
-            
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");  
-            LocalDateTime now = LocalDateTime.now();  
-            String currentTime = dtf.format(now);            
-            
-            updatedTime = updatedTime.replaceFirst("\\.[0]*", "");
-            updatedTime = updatedTime.replaceFirst("[0-9]*-[0-9]*-[0-9]* ", "");
-            
-            LocalTime t1 = LocalTime.parse(updatedTime);
-            LocalTime t2 = LocalTime.parse(currentTime);
-            Duration diff = Duration.between(t1, t2);
-            **/
         
             for (Object player : jsonArrayCops) {
                 if (!player.toString().startsWith("[Justiz]")) {
@@ -283,7 +232,7 @@ public enum Command {
             }
         
             String messageText = 
-                    /**"Stand von vor " + diff.toSeconds() + " Sekunden" + "\n**/"Es sind " + Integer.toString(stringList.size()) + " Cops auf dem Server.\n";
+                    "Es sind " + Integer.toString(stringList.size()) + " Cops auf dem Server.\n";
             
             if (matcher.group(0).length() > "!cops".length()) {
                 for (String player : stringList) {
@@ -304,10 +253,11 @@ public enum Command {
         }        
     },
     
-    HELP("![hH][eE][lL][pP]") {
+    HELP("![hH][eE][lL][pP]\\s?(.*)") {
         @Override
         public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
                 throws InputException, JSONException, IOException, TelegramApiException {
+            
             
             String messageText = 
                     "!HFB = Zeigt an wie viele HFB Mitglieder auf dem Server sind und deren Namen.\n"
@@ -321,9 +271,9 @@ public enum Command {
                     + "------------------------------------------------------------------\n"
                     + "Außerdem werden geschriebene Frequenzen automatisch gepinnt.\n"
                     + "Falls jemand Ideen für nützliche Funktionen hat bitte bei John Simmit aka Dipsy melden.";
-                           
+                        
             hfbot.sendBotMessage(messageText, chatId);
-        }        
+        }
     },
     
     CHANGELOG("![cC][hH][aA][nN][gG][eE][lL][oO][gG]( full)?") {
@@ -363,7 +313,8 @@ public enum Command {
     };
     
     
-    private Pattern pattern;
+    private Pattern pattern; 
+    private String info;
     
     /**
      * Constructs a new command.
@@ -374,12 +325,17 @@ public enum Command {
         this.pattern = Pattern.compile(pattern);
     }
     
+    public String getInfo() {
+        return info;
+    }
+
+    public void setInfo(String info) {
+        this.info = info;
+    }
+
     /**
      * Checks an input against the commands above and calls the command if one is found.
-     *
-     * @param receivedMsg The user input.
-     * @param board The board the command should be run on.
-     * @return The command that got executed.
+     * 
      * @throws InputException Provides an error message if no command matches.
      */
     public static void executeMatching(String receivedMsg, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot) 
@@ -397,7 +353,6 @@ public enum Command {
      * Executes a command.
      *
      * @param matcher The regex matcher that contains the groups of input of the command.
-     * @param board The board the command should be run on.
      * @throws InputException To catch if an error occurs while trying to execute the command.
      */
     public abstract void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot) 

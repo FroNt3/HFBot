@@ -12,14 +12,10 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
  */
 public class Main {
 
-    /**
-     * @param args from the command line
-     */
     public static void main(String[] args) {
-
+        System.out.println("Starting HFBot...");
         ApiContextInitializer.init();
         TelegramBotsApi telegramBotsApi = new TelegramBotsApi();
-        System.out.println("Starting HFBot...");
         try {
             telegramBotsApi.registerBot(new HFBot());
             System.out.println("HFBot online");
@@ -27,7 +23,5 @@ public class Main {
             e.printStackTrace();
             System.out.println("HFBot failed to start");
         }
-
-
     }
 }

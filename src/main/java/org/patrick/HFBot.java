@@ -89,6 +89,6 @@ public class HFBot extends TelegramLongPollingBot {
          * @return API key of the bot.
          */
         public String getBotToken() {
-            return Keys.getKeyTelegramBot();
+            return PrivateInfo.getKeyTelegramBot();
         }
     }

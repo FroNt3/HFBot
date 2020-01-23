@@ -41,5 +41,8 @@ public final class Frequency {
         }
         return false;
     }
+    
+    private Frequency() {        
+    }
 
 }
