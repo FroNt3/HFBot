@@ -188,15 +188,103 @@ public enum Command {
         }        
     },
     
-    FF("![fF][fF]") {
+    FF("![fF][fF]\\s?((blacklist)\\s(list|get|add|delete)\\s?([0-9]+\\.[0-9])?|(range)\\s(get|set)(\\s?(min|max)\\s([0-9]+\\.[0-9]))?)?") {
         @Override
         public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
                 throws InputException, JSONException, IOException, TelegramApiException {
-
-            double frequency = Frequency.getFrequency();
             
-            int messageId = hfbot.sendBotMessage(String.valueOf(frequency), chatId).getMessageId();
-            hfbot.pinBotMessage(chatId, messageId);
+            if (matcher.group(0).length() > "!ff".length()) {
+                if (!(matcher.group(2) == null) && matcher.group(2).equals("blacklist")) {
+                    String messageText = "";
+                    
+                    if (matcher.group(3).equals("list") || matcher.group(3).equals("get")) {
+                        
+                        ArrayList<String> content = FileHandler.readFile(Frequency.getBlacklistPath());
+                        messageText = "Folgende Frequenzen sind blacklisted:\n";
+                        for (String ffString : content) {
+                            messageText = messageText + ffString + " ";
+                        }
+                        
+                    } else if (matcher.group(3).equals("add")) {
+                        
+                        ArrayList<String> content = FileHandler.readFile(Frequency.getBlacklistPath());
+                        String ffAdd = matcher.group(4);
+                        boolean check = false;
+                        
+                        for (String ffString : content) {
+                            if (ffString.equals(ffAdd)) {
+                                check = true;
+                            }
+                        }
+                        
+                        if (check) {
+                            messageText = "Frequenz ist bereits blacklisted.";
+                        } else {
+                            content.add(ffAdd);
+                            FileHandler.writeFile(Frequency.getBlacklistPath(), content);
+                            messageText = ffAdd + " wurde der Blacklist hinzugefuegt.";
+                        }
+                        
+                    } else if (matcher.group(3).equals("delete")) {
+                        
+                        ArrayList<String> content = FileHandler.readFile(Frequency.getBlacklistPath());
+                        String ffDel = matcher.group(4);
+                        
+                        for (String ffString : content) {
+                            if (ffString.equals(ffDel)) {
+                                content.remove(ffDel);
+                                FileHandler.writeFile(Frequency.getBlacklistPath(), content);
+                                messageText = ffDel + " wurde von der Blacklist entfernt.";
+                                break;
+                            }
+                        }
+                    } else {
+                        messageText = "Unbekannter Parameter";
+                    }
+
+                    hfbot.sendBotMessage(messageText, chatId);
+                    
+                } else if (matcher.group(5).equals("range")) {
+                    
+                    double min = Frequency.getMinFF();
+                    double max = Frequency.getMaxFF();
+                    
+                    String messageText = "";
+                    
+                    if (matcher.group(6).equals("get")) {     
+                        
+                        messageText = 
+                                "Frequenzen werden zwischen " + min + " - " + max + " generiert.\n";
+                    } else if (matcher.group(6).equals("set")) {
+                        
+                        if (matcher.group(8).equals("min")) {
+                            min = Double.parseDouble(matcher.group(9));
+                        } else if (matcher.group(8).equals("max")) {
+                            max = Double.parseDouble(matcher.group(9));
+                        } else {
+                            System.out.println("Unknown Parameter " + matcher.group(8));
+                        }
+                        
+                        ArrayList<String> content = new ArrayList<String>();
+                        content.add(Double.toString(min));
+                        content.add(Double.toString(max));
+                        FileHandler.writeFile(Frequency.getCfgPath(), content);
+                        messageText = 
+                                "Frequenzen werden nun zwischen " + min + " - " + max + " generiert.\n";
+                    } else {
+                        messageText = "Unbekannter Parameter";
+                    }
+                    
+                    hfbot.sendBotMessage(messageText, chatId);
+                }
+            } else {
+                
+                double frequency = Frequency.getFrequency();
+                
+                int messageId = hfbot.sendBotMessage(String.valueOf(frequency), chatId).getMessageId();
+                hfbot.pinBotMessage(chatId, messageId);
+                
+            }                
         }        
     },
     
@@ -205,14 +293,15 @@ public enum Command {
         public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
                 throws InputException, JSONException, IOException, TelegramApiException {
 
-            Long chatIdHFB = -1001279920819L;
+            //Long chatIdHFB = -1001279920819L;
+            Long chatIdHFB = -1001244020466L;
             if (messageUserId == 555994770) {
                 hfbot.sendBotMessage(matcher.group(1), chatIdHFB);
             }
         }        
     },
     
-    COPS("![cC][oO][pP][sS]( liste?)?") {
+    COPS("![cC][oO][pP][sS]?( liste?)?") {
         @Override
         public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
                 throws InputException, JSONException, IOException, TelegramApiException {
@@ -262,17 +351,21 @@ public enum Command {
             String messageText = 
                     "!HFB = Zeigt an wie viele HFB Mitglieder auf dem Server sind und deren Namen.\n"
                     + "!cops (list) = Zeigt an wie viele Cops auf dem Server sind und wahlweise deren Namen.\n"
-                    + "!ff = Legt eine neue Frequenz fest und pinnt sie.\n"                            
+                    + "!ff = Legt eine neue Frequenz fest und pinnt sie.\n"   
+                    + "!ff blacklist list = Listet geblacklistete Frequenzen auf.\n"
+                    + "!ff blacklist add/delete <Frequenz> = Löscht/Added Frequenz von/zur Blacklist.\n"
+                    + "!ff range get = Zeigt in welchem Bereich Frequenzen generiert werden.\n"
+                    + "!ff range set min/max <Frequenz> = Legt min/max Frequenz Bereich fest.\n"
                     + "!server <Name> = Zeigt an ob <Name> auf dem Server ist.\n"
                     + "!ts <Name> = Zeigt an ob <Name> auf dem Teamspeak ist.\n"
                     + "!gang <Tag> = Zeigt an wie viele Gangmitglieder von <Tag> auf dem Server sind.\n"
-                    + "!Geld <Name> = Zeigt an wie viel Geld <Name> (John/Paul/Makarov/Vladi/Hans) auf der Bank hat.\n"
+                    + "!Geld <Name> = Zeigt an wie viel Geld <Name> auf der Bank hat.\n"
                     + "!changelog (full) = Zeigt die letzte oder alle Änderung an.\n"
                     + "------------------------------------------------------------------\n"
                     + "Außerdem werden geschriebene Frequenzen automatisch gepinnt.\n"
-                    + "Falls jemand Ideen für nützliche Funktionen hat bitte bei John Simmit aka Dipsy melden.";
+                    + "Falls jemand Ideen für nützliche Funktionen hat bitte bei John Simmit/Dipsy/Paddy melden.";
                         
-            hfbot.sendBotMessage(messageText, chatId);
+        hfbot.sendBotMessage(messageText, chatId);
         }
     },
     
@@ -282,12 +375,16 @@ public enum Command {
                 throws InputException, JSONException, IOException, TelegramApiException {
             
             String messageText = 
-                    ">>> 04.01.20 - 00:19 <<<\n"
-                    + "- !gang <Tag> hinzugefügt.\n";
+                    ">>> 09.06.20 - 16:02 <<<\n"
+                    + "- Die Möglichkeit hinzugefügt die Blacklist und "
+                    + "die Range von !ff zu konfigurieren\n"
+                    + "- API Key von Coleman hinzugefügt\n";
                     
             
             if (matcher.group(0).length() > "!changelog".length()) {
                 messageText = messageText
+                            + ">>> 04.01.20 - 00:19 <<<\n"
+                            + "- !gang <Tag> hinzugefügt.\n"
                             + ">>> 01.01.20 - 18:12 <<<\n"
                             + "-Code Architektur komplett Überarbeitet.\n"
                             + "-!geld hat jetzt formatierte Zahlen.\n"
@@ -298,9 +395,11 @@ public enum Command {
                             + "-!hfb zeigt jetzt immer alle Mitspieler an (@Remagy).\n"
                             + "-Code effizienter gemacht.\n"
                             + ">>> 29.12.19 - 16:33 <<<\n"
-                            + "- !HFB akzeptiert jetzt \"list\" als Argument um alle anwesenden Mitglieder aufzulisten.\n"
+                            + "- !HFB akzeptiert jetzt \"list\" als Argument "
+                            + "um alle anwesenden Mitglieder aufzulisten.\n"
                             + "- API key von Hans Flucht hinzugefÜgt.\n"
-                            + "- Commands mit Variablen machen den Bot nicht mehr verrückt, wenn man die Variablen vergisst.\n"
+                            + "- Commands mit Variablen machen den Bot nicht mehr verrückt, "
+                            + "wenn man die Variablen vergisst.\n"
                             + "- Groß und Kleinschreibung sollte jetzt überall egal sein.\n"
                             + ">>> 29.12.19 - 02:06 <<<\n"                            
                             + "- !Geld command geupdated (siehe !help).\n"
