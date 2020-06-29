@@ -21,26 +21,28 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
  */
 public enum Command {      
     
-    HFB("![hH][fF][bB]") {
+    MW("![mM][wW]") {
         @Override
-        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot) 
-                throws InputException, JSONException, IOException, TelegramApiException {
+        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, Stalker stalker, HFBot hfbot) 
+                throws CustomException, JSONException, IOException, TelegramApiException {
             
-            ArrayList<String> stringList = new ArrayList<String>();
-
-            JSONObject json = JsonReader.readJsonFromUrl("https://api.realliferpg.de/v1/servers");
-        
-            JSONArray jsonArrayData = json.getJSONArray("data");                
-            JSONArray jsonArrayPlayers = jsonArrayData.getJSONObject(0).getJSONArray("Players");
+            ArrayList<String> stringList = new ArrayList<String>();             
+            JSONArray jsonArrayPlayers = ApiReader.getOnlinePlayersJson();
             
             for (Object player : jsonArrayPlayers) {
-                if (player.toString().startsWith("[HFB]")) {
+                if (player.toString().startsWith("[mW]")) {
                     stringList.add(player.toString());
                 }
             }
         
-            String messageText = 
-                    "Es sind " + Integer.toString(stringList.size()) + " HFB Mitglieder auf dem Server.\n";
+            String messageText;
+            if (stringList.size() == 1) {
+                messageText = 
+                        "Es ist 1 mW-Mitglied auf dem Server.\n";
+            } else {
+                messageText = 
+                        "Es sind " + Integer.toString(stringList.size()) + " mW-Mitglieder auf dem Server.\n";
+            }           
             
             for (String player : stringList) {
                 messageText = messageText + player + "\n";
@@ -52,17 +54,14 @@ public enum Command {
     
     GANG("![gG][aA][nN][gG]\\s?(.*)") {    
         @Override
-        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
-                throws InputException, JSONException, IOException, TelegramApiException {
+        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, Stalker stalker, HFBot hfbot)
+                throws CustomException, JSONException, IOException, TelegramApiException {
             
             ArrayList<String> stringList = new ArrayList<String>();
             
             String tag = matcher.group(1);
-            
-            JSONObject json = JsonReader.readJsonFromUrl("https://api.realliferpg.de/v1/servers");
-            
-            JSONArray jsonArrayData = json.getJSONArray("data");                
-            JSONArray jsonArrayPlayers = jsonArrayData.getJSONObject(0).getJSONArray("Players");
+                         
+            JSONArray jsonArrayPlayers = ApiReader.getOnlinePlayersJson();
         
             for (Object player : jsonArrayPlayers) {
                 if (player.toString().toLowerCase().startsWith("[" + tag.toLowerCase() + "]")) {
@@ -84,74 +83,35 @@ public enum Command {
     
     GELD("![gG][eE][lL][dD]\\s?(.*)") {
         @Override
-        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
-                throws InputException, JSONException, IOException, TelegramApiException { 
+        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, Stalker stalker, HFBot hfbot)
+                throws CustomException, JSONException, IOException, TelegramApiException { 
             
-            String name = matcher.group(1);
+            String name = matcher.group(1);   
+            String messageText = "";                      
+            Person person = stalker.getPerson(name);
             
-            String url = "https://api.realliferpg.de/v1/player/";
-            String messageText = "";
-            
-            ArrayList<String[]> infoList = PrivateInfo.getAllInfo();
-            ArrayList<Person> personList = new ArrayList<Person>();
-            
-            for (String[] info : infoList) {
-                personList.add(new Person(info));
-            }
-            
-            Boolean check = false;
-            
-            for (Person person : personList) {
-                if (containsToLowerCase(person.getName(), name)) {
-                    url = url + person.getKey();
-                    messageText = person.getName();
-                    check = true;
-                    break;
-                }
-            }
-            
-            if (check) {
-                JSONObject json = JsonReader.readJsonFromUrl(url);
-                JSONArray jsonArrayData = json.getJSONArray("data");
-                int balance = jsonArrayData.getJSONObject(0).getInt("bankacc");
-                
-                String balanceUnformat = Integer.toString(balance);
-                String balanceReverse = "";
-                String balanceFormat = "";
-                int counter = 0;
-                
-                for (int i = (balanceUnformat.length() - 1); i >= 0; i--) {
-                    balanceReverse = balanceReverse + balanceUnformat.charAt(i);
-                    if (++counter == 3 && i != 0) {
-                        balanceReverse = balanceReverse + ".";
-                        counter = 0;
-                    }
-                }
-                
-                for (int i = (balanceReverse.length() - 1); i >= 0; i--) {
-                    balanceFormat = balanceFormat + balanceReverse.charAt(i);
-                }
-
-                messageText = messageText + " hat " + balanceFormat + "$ auf seinem Konto.";
-            } else {
+            if (person == null) {
                 messageText = "Von " + name
                         + " ist kein API key vorhanden oder kann niemandem zugeordnet werden.";
-            } 
+            } else {
+                int balance = ApiReader.getBalance(person.getKey());                
+                String balanceFormat = Calc.formatInt(balance);
+
+                messageText = person.getName() + " hat " + balanceFormat + "$ auf seinem Konto.";
+            }
             
-            hfbot.sendBotMessage(messageText, chatId);             
+            hfbot.sendBotMessage(messageText, chatId);     
         }        
     },
     
     SERVER("![sS][eE][rR][vV][eE][rR]\\s?(.*)") {
         @Override
-        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
-                throws InputException, JSONException, IOException, TelegramApiException {   
+        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, Stalker stalker, HFBot hfbot)
+                throws CustomException, JSONException, IOException, TelegramApiException {   
             
             String name = matcher.group(1);
             
-            JSONObject json = JsonReader.readJsonFromUrl("https://api.realliferpg.de/v1/servers");            
-            JSONArray jsonArrayData = json.getJSONArray("data");                
-            JSONArray jsonArrayPlayers = jsonArrayData.getJSONObject(0).getJSONArray("Players");    
+            JSONArray jsonArrayPlayers = ApiReader.getOnlinePlayersJson();  
             
             String messageText = name + " ist nicht auf dem Server.";
             for (Object player : jsonArrayPlayers) {
@@ -167,14 +127,12 @@ public enum Command {
     
     TS("![tT][sS]\\s?(.*)") {
         @Override
-        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
-                throws InputException, JSONException, IOException, TelegramApiException {
+        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, Stalker stalker, HFBot hfbot)
+                throws CustomException, JSONException, IOException, TelegramApiException {
                         
             String name = matcher.group(1);
-            
-            JSONObject json = JsonReader.readJsonFromUrl("https://api.realliferpg.de/v1/teamspeaks");          
-            JSONArray jsonArrayData = json.getJSONArray("data");                
-            JSONArray jsonArrayUsers = jsonArrayData.getJSONObject(0).getJSONArray("Users");    
+             
+            JSONArray jsonArrayUsers = ApiReader.getOnlineTSUsers();    
             
             String messageText = name + " ist nicht auf dem TS.";
             for (Object users : jsonArrayUsers) {
@@ -190,8 +148,8 @@ public enum Command {
     
     FF("![fF][fF]\\s?((blacklist)\\s(list|get|add|delete)\\s?([0-9]+\\.[0-9])?|(range)\\s(get|set)(\\s?(min|max)\\s([0-9]+\\.[0-9]))?)?") {
         @Override
-        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
-                throws InputException, JSONException, IOException, TelegramApiException {
+        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, Stalker stalker, HFBot hfbot)
+                throws CustomException, JSONException, IOException, TelegramApiException {
             
             if (matcher.group(0).length() > "!ff".length()) {
                 if (!(matcher.group(2) == null) && matcher.group(2).equals("blacklist")) {
@@ -290,8 +248,8 @@ public enum Command {
     
     BOTMESSAGE("![bB][oO][tT][mM][eE][sS][sS][aA][gG][eE] (.*)") {
         @Override
-        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
-                throws InputException, JSONException, IOException, TelegramApiException {
+        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, Stalker stalker, HFBot hfbot)
+                throws CustomException, JSONException, IOException, TelegramApiException {
 
             //Long chatIdHFB = -1001279920819L;
             Long chatIdHFB = -1001244020466L;
@@ -303,8 +261,8 @@ public enum Command {
     
     COPS("![cC][oO][pP][sS]?( liste?)?") {
         @Override
-        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
-                throws InputException, JSONException, IOException, TelegramApiException {
+        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, Stalker stalker, HFBot hfbot)
+                throws CustomException, JSONException, IOException, TelegramApiException {
             
             ArrayList<String> stringList = new ArrayList<String>();
             
@@ -333,10 +291,58 @@ public enum Command {
         }        
     },
     
+    POSI("![pP][oO][sS][iI] (.*)") {
+        @Override
+        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, Stalker stalker, HFBot hfbot)
+                throws CustomException, JSONException, IOException, TelegramApiException {
+
+            Map map = new Map("map.png", 2048);            
+            String name = matcher.group(1);
+            String text = "";
+            
+            stalker.update();
+            
+            if (name.equalsIgnoreCase("all")) {
+                ArrayList<Person> personList = stalker.getPersonList();
+                int x = 0;
+                int y = 0;
+                for (Person person : personList) {
+                    x = map.relativizePos(person.getXPos(), 16000.0);
+                    y = map.relativizePos(person.getYPos(), 16000.0);
+                    text = person.getName();
+                    if (!person.getStatus()) {
+                        text = text + " [off]";
+                    }
+                    map.drawPos(x, y, 15, text); 
+                }
+                map.export();
+                hfbot.sendPhoto(chatId, "map_hfb.png");
+            } else {
+                Person person = stalker.getPerson(name);
+                if (person == null) {
+                    String messageText = "Von " + name
+                            + " ist kein API key vorhanden oder kann niemandem zugeordnet werden.";
+                    hfbot.sendBotMessage(messageText, chatId); 
+                } else {
+                    int x = map.relativizePos(person.getXPos(), 16000.0);
+                    int y = map.relativizePos(person.getYPos(), 16000.0);
+                    text = person.getName();
+                    if (!person.getStatus()) {
+                        text = text + " [off]";
+                    }
+                    map.drawPos(x, y, 15, text); 
+                    map.export();
+                    hfbot.sendPhoto(chatId, "map_hfb.png");
+                }
+            }
+        }        
+    },
+    
+    
     NOCOMMAND_FF("[0-9][0-9]\\.[0-9]") {
         @Override
-        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
-                throws InputException, JSONException, IOException, TelegramApiException {
+        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, Stalker stalker, HFBot hfbot)
+                throws CustomException, JSONException, IOException, TelegramApiException {
 
             hfbot.pinBotMessage(chatId, receivedMsgId);            
         }        
@@ -344,12 +350,13 @@ public enum Command {
     
     HELP("![hH][eE][lL][pP]\\s?(.*)") {
         @Override
-        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
-                throws InputException, JSONException, IOException, TelegramApiException {
+        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, Stalker stalker, HFBot hfbot)
+                throws CustomException, JSONException, IOException, TelegramApiException {
             
             
             String messageText = 
-                    "!HFB = Zeigt an wie viele HFB Mitglieder auf dem Server sind und deren Namen.\n"
+                    "!mw = Zeigt an wie viele mW Mitglieder auf dem Server sind und deren Namen.\n"
+                    + "!posi <name> = Zeigt an wo auf der Karte die Person ist, name=all zeigt alle an\n"
                     + "!cops (list) = Zeigt an wie viele Cops auf dem Server sind und wahlweise deren Namen.\n"
                     + "!ff = Legt eine neue Frequenz fest und pinnt sie.\n"   
                     + "!ff blacklist list = Listet geblacklistete Frequenzen auf.\n"
@@ -371,29 +378,32 @@ public enum Command {
     
     CHANGELOG("![cC][hH][aA][nN][gG][eE][lL][oO][gG]( full)?") {
         @Override
-        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot)
-                throws InputException, JSONException, IOException, TelegramApiException {
+        public void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, Stalker stalker, HFBot hfbot)
+                throws CustomException, JSONException, IOException, TelegramApiException {
             
             String messageText = 
-                    ">>> 09.06.20 - 16:02 <<<\n"
-                    + "- Die Möglichkeit hinzugefügt die Blacklist und "
-                    + "die Range von !ff zu konfigurieren\n"
-                    + "- API Key von Coleman hinzugefügt\n";
+                    ">>> 11.06.20 - 01:07 <<<\n"
+                    + "- !posi <name> hinzugefügt\n"
+                    + "- Architektur Zeugs\n";
                     
             
             if (matcher.group(0).length() > "!changelog".length()) {
                 messageText = messageText
+                            + ">>> 09.06.20 - 16:02 <<<\n"
+                            + "- Die Möglichkeit hinzugefügt die Blacklist und "
+                            + "die Range von !ff zu konfigurieren\n"
+                            + "- API Key von Coleman hinzugefügt\n"
                             + ">>> 04.01.20 - 00:19 <<<\n"
                             + "- !gang <Tag> hinzugefügt.\n"
                             + ">>> 01.01.20 - 18:12 <<<\n"
-                            + "-Code Architektur komplett Überarbeitet.\n"
-                            + "-!geld hat jetzt formatierte Zahlen.\n"
-                            + "-github repo: https://github.com/FroNt3/HFBot/tree/master/src/main/java/org/patrick\n"
+                            + "- Code Architektur komplett Überarbeitet.\n"
+                            + "- !geld hat jetzt formatierte Zahlen.\n"
+                            + "- github repo: https://github.com/FroNt3/HFBot/tree/master/src/main/java/org/patrick\n"
                             + ">>> 30.12.19 - 19:05 <<<\n"
-                            + "-!cops (list) hinzugefÜgt.\n"
-                            + "-!changelog (full) hinzugefÜgt.\n"
-                            + "-!hfb zeigt jetzt immer alle Mitspieler an (@Remagy).\n"
-                            + "-Code effizienter gemacht.\n"
+                            + "- !cops (list) hinzugefÜgt.\n"
+                            + "- !changelog (full) hinzugefÜgt.\n"
+                            + "- !hfb zeigt jetzt immer alle Mitspieler an (@Remagy).\n"
+                            + "- Code effizienter gemacht.\n"
                             + ">>> 29.12.19 - 16:33 <<<\n"
                             + "- !HFB akzeptiert jetzt \"list\" als Argument "
                             + "um alle anwesenden Mitglieder aufzulisten.\n"
@@ -435,15 +445,15 @@ public enum Command {
     /**
      * Checks an input against the commands above and calls the command if one is found.
      * 
-     * @throws InputException Provides an error message if no command matches.
+     * @throws CustomException Provides an error message if no command matches.
      */
-    public static void executeMatching(String receivedMsg, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot) 
-            throws JSONException, IOException, TelegramApiException, InputException {
+    public static void executeMatching(String receivedMsg, Long chatId, int receivedMsgId, int messageUserId, Stalker stalker, HFBot hfbot) 
+            throws JSONException, IOException, TelegramApiException, CustomException {
         
         for (Command command : Command.values()) {
             Matcher matcher = command.pattern.matcher(receivedMsg);
             if (matcher.matches()) {
-                command.execute(matcher, chatId, receivedMsgId, messageUserId, hfbot);
+                command.execute(matcher, chatId, receivedMsgId, messageUserId, stalker, hfbot);
             }
         }
     }
@@ -452,10 +462,10 @@ public enum Command {
      * Executes a command.
      *
      * @param matcher The regex matcher that contains the groups of input of the command.
-     * @throws InputException To catch if an error occurs while trying to execute the command.
+     * @throws CustomException To catch if an error occurs while trying to execute the command.
      */
-    public abstract void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, HFBot hfbot) 
-            throws InputException, JSONException, IOException, TelegramApiException;
+    public abstract void execute(MatchResult matcher, Long chatId, int receivedMsgId, int messageUserId, Stalker stalker, HFBot hfbot) 
+            throws CustomException, JSONException, IOException, TelegramApiException;
     
     /**
      * @return Whether string2 is within string1 or not

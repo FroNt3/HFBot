@@ -65,4 +65,24 @@ public class Person {
         this.status = bool;
     }
     
+    public double getXPos() {
+        String x = this.getPosi();
+        x = x.replaceFirst("\\[", "");
+        x = x.replaceFirst(",.*", "");
+        return Double.parseDouble(x);
+    }
+    
+    public double getYPos() {
+        String y = this.getPosi();
+        y = y.replaceFirst("\\[[0-9]*\\.?[0-9]*,", "");
+        y = y.replaceFirst(",[0-9]*\\.?[0-9]*\\]", "");
+        try {
+            return Double.parseDouble(y);
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+        }
+        return 0;
+        
+    }
+    
 }
